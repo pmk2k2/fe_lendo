@@ -16,7 +16,6 @@ import {
 } from "react-router-dom";
 import {
     getAuthedProfileLoader,
-    useGetProfile,
 } from "./api/account/account.api.ts";
 import { AuthProvider } from "./components/AuthProvider.tsx";
 import Root  from "./components/Layout.tsx";
@@ -24,7 +23,6 @@ import "./index.css";
 import { ROUTES, tokenStorage } from "./static.ts";
 import { message } from "antd";
 import { renewTokenLoader } from "./api/auth/auth.api.ts";
-import { getAllActiveCategoriesLoader } from "./api/category/category.api.ts";
 import Home from "./pages/Home.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import SignUpPage from "./pages/SignUpPage.tsx";
@@ -47,9 +45,8 @@ const queryClient = new QueryClient({
             }
             if (error.cause === 401) {
                 // log user out imperatively
-                const profileKey = useGetProfile.getKey();
+
                 tokenStorage.clear();
-                queryClient.setQueryData(profileKey, null);
             }
         },
     }),
@@ -88,7 +85,6 @@ const router = createBrowserRouter([
             {
                 loader: loaderCombinator(
                     getAuthedProfileLoader,
-                    getAllActiveCategoriesLoader
                 ),
                 element: <Root />,
                 children: [

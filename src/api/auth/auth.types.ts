@@ -6,9 +6,8 @@ export interface SignupVars {
   email: string;
   password: string;
 }
-export interface SignupRes extends BaseApiRes {
-  data: string;
-}
+
+export interface SignupRes extends BaseApiRes<string> {}
 
 export interface ActiveAccountVars extends SignupVars {
   activeKey: string;
@@ -18,25 +17,23 @@ export interface LoginVars {
   email: string;
   password: string;
 }
-export interface LoginRes extends BaseApiRes {
-  data: {
-    accessToken: string;
-    tokenType: string;
-    refreshToken: {
-      id: string;
-      token: string;
-      expireDate: string;
-    };
-  };
-}
 
-export interface LogoutRes extends BaseApiRes {
-  data: string;
-}
+export interface LoginRes extends BaseApiRes<{
+  accessToken: string;
+  tokenType: string;
+  refreshToken: {
+    id: string;
+    token: string;
+    expireDate: string;
+  };
+}> {}
+
+export interface LogoutRes extends BaseApiRes<string> {}
 
 export interface ValidateTokenVars {
   token: string | undefined;
 }
+
 export type RenewTokenVars = {
   refreshToken: LoginRes["data"]["refreshToken"]["token"];
 };

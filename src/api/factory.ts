@@ -1,32 +1,31 @@
 import { tokenStorage } from "../static";
 import { ApiFactory, BaseApiRes, RequestOption } from "../types/api.types";
 
-// https://vervet-thankful-properly.ngrok-free.app/
+const BASE_URL = "https://vervet-thankful-properly.ngrok-free.app";
 
 export const createApiFactory = (
-  baseUrl: string,
-  defaultOptions?: RequestInit
-): ApiFactory<BaseApiRes> => {
+    baseUrl: string,
+    defaultOptions?: RequestInit
+): ApiFactory => {
   const buildUrl = (path = "", params?: URLSearchParams) =>
-    `https://vervet-thankful-properly.ngrok-free.app${baseUrl}${path}` +
-    (params ? `?${params}` : "");
+      `${BASE_URL}${baseUrl}${path}` + (params ? `?${params}` : "");
 
-  return async function <TData extends BaseApiRes>(
-    url = "",
-    options?: RequestOption
+  return async function <TData extends BaseApiRes<any>>(
+      url = "",
+      options?: RequestOption
   ): Promise<TData> {
     const token =
-      options?.token ??
-      (options?.useStorageToken && tokenStorage.getItem("_token", "raw"));
+        options?.token ??
+        (options?.useStorageToken && tokenStorage.getItem("_token", "raw"));
 
-    const headers = {
+    const headers: HeadersInit = {
       ...options?.headers,
       Authorization: token ? `Bearer ${token}` : "",
       "Content-Type": "application/json",
     };
     const searchParams = options?.params
-      ? new URLSearchParams(options.params)
-      : undefined;
+        ? new URLSearchParams(options.params as Record<string, string>)
+        : undefined;
 
     const response = await fetch(buildUrl(url, searchParams), {
       ...defaultOptions,
@@ -37,22 +36,22 @@ export const createApiFactory = (
 
     try {
       const data = await response.json();
-
       if (!response.ok) {
         console.error(
-          `${response.status} ${data.message ?? JSON.stringify(data)}`
+            `${response.status} ${data.message ?? JSON.stringify(data)}`
         );
         throw new Error(
-          `Status ${response.status}: ${data.message ?? JSON.stringify(data)}`,
-          {
-            cause: response.status,
-          }
+            `Status ${response.status}: ${data.message ?? JSON.stringify(data)}`,
+            {
+              cause: response.status,
+            }
         );
       }
       return data;
     } catch (error) {
       const err = error as Error;
-      throw new Error(err.message, { cause: response.status });
+      console.error("Fetch error:", err.message);
+      throw new Error(`Error: ${err.message}`, { cause: response.status });
     }
   };
 };

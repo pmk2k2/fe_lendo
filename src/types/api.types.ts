@@ -1,15 +1,13 @@
-import { ObjAny } from "./utils.types";
 
-export type RequestOption = Omit<RequestInit, "body"> & {
-  params?: ObjAny;
-  body?: ObjAny;
+export interface RequestOption extends RequestInit {
+  params?: Record<string, string>;
   token?: string;
   useStorageToken?: boolean;
-};
+}
 
-export type ApiFactory<Schema = any> = <TData extends Schema>(
-  url?: string,
-  options?: RequestOption
+export type ApiFactory = <TData extends BaseApiRes<any>>(
+    url: string,
+    options?: RequestOption
 ) => Promise<TData>;
 
 export interface DataSchema {
@@ -18,10 +16,10 @@ export interface DataSchema {
   [key: string]: any;
 }
 
-export interface BaseApiRes {
-  status: string;
+export interface BaseApiRes<T> {
+  data: T;
   message: string;
-  dateTime: string;
+  status: string;
 }
 
 export type PageInfoRes = {

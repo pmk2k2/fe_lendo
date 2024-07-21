@@ -1,37 +1,37 @@
-import { createQuery } from "react-query-kit";
+import { useQuery, QueryClient } from "@tanstack/react-query";
 import { createApiFactory } from "../factory";
 import { useAuthUser } from "react-auth-kit";
 import { GetAccountRes } from "./account.types";
-import type { QueryClient } from "@tanstack/react-query";
 import { tokenStorage } from "../../static";
-import { BaseApiRes } from "../../types/api.types";
 
 const fetchAccount = createApiFactory("/api/auth/account/");
 
-export const useGetProfile = createQuery<GetAccountRes, string, BaseApiRes>({
-  primaryKey: "account",
-  queryFn: ({ queryKey: [, userId] }) => fetchAccount(userId),
-});
+const getAccount = async (userId: string): Promise<GetAccountRes> => {
+    const response = await fetchAccount(userId);
+    return response.data; // Ensure you are returning the correct data structure
+};
 
-export const getAuthedProfileLoader =
-  (queryClient: QueryClient) => async () => {
-    const { getKey, queryFn } = useGetProfile;
+export const useGetProfile = (userId: string) => {
+    return useQuery<GetAccountRes, Error>({
+        queryKey: ["account", userId],
+        queryFn: () => getAccount(userId),
+        staleTime: Infinity,
+        enabled: !!userId,
+    });
+};
+
+export const getAuthedProfileLoader = (queryClient: QueryClient) => async () => {
     const authedState = tokenStorage.getItem("_token_state", "safe");
-    if (authedState)
-      queryClient.prefetchQuery(getKey(authedState.id), {
-        queryFn,
-      });
+    if (authedState) {
+        await queryClient.prefetchQuery({
+            queryKey: ["account", authedState.id],
+            queryFn: () => getAccount(authedState.id),
+        });
+    }
     return null;
-  };
+};
 
 export const useGetAuthedProfile = () => {
-  const user = useAuthUser()();
-
-  return useGetProfile({
-    variables: user?.id,
-    enabled: !!user?.id,
-    select: (data) => data.data,
-    staleTime: Infinity,
-    useErrorBoundary: true,
-  });
+    const user = useAuthUser()();
+    return useGetProfile(user?.id ?? "");
 };
