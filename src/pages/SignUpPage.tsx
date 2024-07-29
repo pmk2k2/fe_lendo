@@ -2,16 +2,13 @@ import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import AppleIcon from '@mui/icons-material/Apple';
-import { useSignupMu } from '../api/auth/auth.api';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import FacebookLogin from '@greatsumini/react-facebook-login';
-// import FacebookLogin from 'react-facebook-login';
-import AppleLogin from 'react-apple-login';
+import GoogleIcon from '@mui/icons-material/Google';
+import { auth, googleProvider, facebookProvider, appleProvider, createUserWithEmailAndPassword } from '../firebase';
+import { signInWithPopup, updateProfile } from 'firebase/auth';
 
 const SignUpPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
-    const mutation = useSignupMu(); // Use the API hook
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -30,36 +27,26 @@ const SignUpPage: React.FC = () => {
             return;
         }
 
-        mutation.mutate({ firstName, lastName, email, password }, {
-            onSuccess: () => {
-                setError(null);
-                localStorage.setItem('user', JSON.stringify({ email }));
-                navigate('/home');
-            },
-            onError: (error: any) => {
-                setError(`Signup failed: ${error.message}`);
-            },
-        });
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            await updateProfile(user, { displayName: `${firstName} ${lastName}` });
+            localStorage.setItem('user', JSON.stringify(user));
+            navigate('/home');
+        } catch (error: any) {
+            setError(`Signup failed: ${error.message}`);
+        }
     };
 
-    const isLoading = mutation.status === 'pending';
-
-    const responseGoogleSuccess = (response: any) => {
-        console.log(response);
-        // Handle Google sign-up response here
-        // Redirect or update state as needed
-    };
-
-    const responseGoogleError = () => {
-        console.log("Google sign-up failed");
-    };
-
-    const responseFacebook = (response: any) => {
-        console.log(response);
-    };
-
-    const responseApple = (response: any) => {
-        console.log(response);
+    const handleSocialLogin = async (provider: any) => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            localStorage.setItem('user', JSON.stringify(user));
+            navigate('/home');
+        } catch (error: any) {
+            setError(`Social signup failed: ${error.message}`);
+        }
     };
 
     return (
@@ -99,7 +86,7 @@ const SignUpPage: React.FC = () => {
                                 type="text"
                                 autoComplete="family-name"
                                 required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
                                 placeholder="Last Name"
                             />
                         </div>
@@ -111,7 +98,7 @@ const SignUpPage: React.FC = () => {
                                 type="email"
                                 autoComplete="email"
                                 required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
                                 placeholder="Email address"
                             />
                         </div>
@@ -121,7 +108,7 @@ const SignUpPage: React.FC = () => {
                                 id="password"
                                 name="password"
                                 type="password"
-                                autoComplete="new-password"
+                                autoComplete="current-password"
                                 required
                                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
                                 placeholder="Password"
@@ -132,54 +119,35 @@ const SignUpPage: React.FC = () => {
                         <button
                             type="submit"
                             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            disabled={isLoading}
                         >
-                            {isLoading ? 'Signing Up...' : 'Sign Up'}
+                            Sign Up
                         </button>
                     </div>
                     <div className="mt-6 grid grid-cols-1 gap-2">
-                        <FacebookLogin
-                            appId=""
-                            autoLoad={false}
-                            fields="name,email,picture"
-                            callback={responseFacebook}
-                            render={({ onClick }) => (
-                                <button
-                                    type="button"
-                                    className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
-                                    onClick={onClick}
-                                >
-                                    <FacebookIcon className="h-5 w-5 text-blue-600 mr-2" />
-                                    Continue with Facebook
-                                </button>
-                            )}
-                        />
-                        <AppleLogin
-                            clientId=""
-                            redirectURI=""
-                            responseType="code"
-                            responseMode="form_post"
-                            usePopup={true}
-                            callback={responseApple}
-                            render={({ onClick }) => (
-                                <button
-                                    type="button"
-                                    className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
-                                    onClick={onClick}
-                                >
-                                    <AppleIcon className="h-5 w-5 text-gray-700 mr-2" />
-                                    Continue with Apple
-                                </button>
-                            )}
-                        />
-                        <GoogleOAuthProvider clientId="">
-                            <div className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <GoogleLogin
-                                    onSuccess={responseGoogleSuccess}
-                                    onError={responseGoogleError}
-                                />
-                            </div>
-                        </GoogleOAuthProvider>
+                        <button
+                            type="button"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
+                            onClick={() => handleSocialLogin(facebookProvider)}
+                        >
+                            <FacebookIcon className="h-5 w-5 text-blue-600 mr-2" />
+                            Continue with Facebook
+                        </button>
+                        <button
+                            type="button"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
+                            onClick={() => handleSocialLogin(appleProvider)}
+                        >
+                            <AppleIcon className="h-5 w-5 text-gray-700 mr-2" />
+                            Continue with Apple
+                        </button>
+                        <button
+                            type="button"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            onClick={() => handleSocialLogin(googleProvider)}
+                        >
+                            <GoogleIcon className="h-5 w-5 text-red-500 mr-2" />
+                            Continue with Google
+                        </button>
                     </div>
                     <div className="mt-4 text-center text-sm text-gray-600">
                         By clicking continue, you agree to our{' '}
@@ -203,7 +171,7 @@ const SignUpPage: React.FC = () => {
 };
 
 const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const re = /^[^\s@]+@[^\s@]+.[^\s@]+$/;
     return re.test(email);
 };
 

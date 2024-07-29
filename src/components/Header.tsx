@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Menu, MenuItem, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -10,7 +10,15 @@ import MenuIcon from '@mui/icons-material/Menu';
 const Header: React.FC = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState<null | HTMLElement>(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(false); // Add a state to track login status
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    useEffect(() => {
+        // Check if user is logged in when the component mounts
+        const user = localStorage.getItem('user');
+        if (user) {
+            setIsLoggedIn(true);
+        }
+    }, []);
 
     const isMenuOpen = Boolean(anchorEl);
     const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
@@ -30,6 +38,12 @@ const Header: React.FC = () => {
 
     const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setMobileMoreAnchorEl(event.currentTarget);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('user');
+        setIsLoggedIn(false);
+        handleMenuClose();
     };
 
     const renderMobileMenu = (
@@ -78,7 +92,7 @@ const Header: React.FC = () => {
                     <MenuItem component={RouterLink} to="/inbox">Inbox</MenuItem>
                     <MenuItem component={RouterLink} to="/rent">Rent</MenuItem>
                     <MenuItem component={RouterLink} to="/for-rent">For Rent</MenuItem>
-                    <MenuItem onClick={() => { setIsLoggedIn(false); handleMenuClose(); }}>Log Out</MenuItem>
+                    <MenuItem onClick={handleLogout} style={{ color: 'red' }}>Log Out</MenuItem>
                 </>
             ) : (
                 <>
