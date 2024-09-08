@@ -1,7 +1,7 @@
 import { tokenStorage } from "../static";
 import { ApiFactory, BaseApiRes, RequestOption } from "../types/api.types";
 
-const BASE_URL = "https://vervet-thankful-properly.ngrok-free.app";
+const BASE_URL = "https://fe-lendo.vercel.app/";
 
 export const createApiFactory = (
     baseUrl: string,
