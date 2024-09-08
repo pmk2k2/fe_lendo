@@ -41,6 +41,7 @@ export const ROUTES = {
     Login: route(""),
     SignUp: route("signup"),
     ActivateAccount: route("activate-account"),
+    EmailVerification: route("email-verification"),
   }),
 };
 

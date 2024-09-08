@@ -10,6 +10,7 @@ import dayjsDurationPlugin from "dayjs/plugin/duration.js";
 import { App } from "antd";
 import { useNavigate } from "react-router";
 import type { MessageInstance } from "antd/es/message/interface";
+
 dayjs.extend(dayjsDurationPlugin);
 
 const authApi = createApiFactory(`/api/auth/`);
@@ -17,6 +18,7 @@ const authApi = createApiFactory(`/api/auth/`);
 export const handleSignin = (signIn: (signInConfig: signInFunctionParams) => boolean) => (data: LoginRes) => {
   const { accessToken, tokenType, refreshToken } = data.data;
   const decoded = myJwtDecode(accessToken);
+
   signIn({
     token: accessToken,
     tokenType: tokenType,
@@ -34,6 +36,7 @@ const refreshApiCallback = (message: MessageInstance): createRefreshParamInterfa
     });
     const { accessToken: newAuthToken, refreshToken: newRefreshToken } = res.data;
     const decoded = myJwtDecode(newAuthToken);
+
     const returnValue: RefreshTokenCallbackResponse = {
       newAuthToken,
       newAuthTokenExpireIn: dayjs.duration(dayjs.unix(decoded.exp).subtract(5, "minute").diff()).asMinutes(),
@@ -42,10 +45,11 @@ const refreshApiCallback = (message: MessageInstance): createRefreshParamInterfa
       newRefreshTokenExpiresIn: dayjs.duration(dayjs(newRefreshToken.expireDate).subtract(5, "minute").diff()).asMinutes(),
       newRefreshToken: newRefreshToken.token,
     };
+
     return returnValue;
   } catch (error) {
-    console.error("~ file: auth.api.ts:48 ~ error:", error);
-    message.error(typeof error === "string" ? error : JSON.stringify(error));
+    console.error("Error in token renewal:", error);
+    message.error(typeof error === "string" ? error : "Token refresh failed");
     return {
       newAuthToken: authToken ?? "",
       isSuccess: false,
@@ -97,13 +101,20 @@ export const useRenewToken = (options?: { enabled: boolean }) => {
 
 export const useSignupMu = () => {
   return useMutation<SignupRes, Error, SignupVars>({
-    mutationFn: (variables) => authApi("sign-up", {
-      method: "POST",
-      body: JSON.stringify(variables),
-      headers: {
-        "Content-Type": "application/json"
-      }
-    }),
+    mutationFn: async (variables) => {
+      const response = await authApi("sign-up", {
+        method: "POST",
+        body: JSON.stringify(variables),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      console.log("Signup API response:", response);
+      return response;
+    },
+    onError: (error) => {
+      console.error("Signup error:", error);
+    },
     onSuccess: (data) => {
       console.log('Signup successful:', data);
     },
@@ -121,12 +132,12 @@ export const useActivateAccountMu = () => {
       method: "POST",
       body: JSON.stringify(variables),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     }),
     onSuccess: (_, { email, password }) => {
       message.loading({
-        content: "Wait for a moment while we logging you in!",
+        content: "Wait for a moment while we log you in!",
         duration: 0,
         key,
       });
@@ -144,14 +155,26 @@ export const useActivateAccountMu = () => {
 export const useLoginMu = () => {
   return useMutation<LoginRes, Error, LoginVars>({
     mutationFn: async (variables) => {
-      const response = await authApi<LoginRes>('login', {
-        method: 'POST',
-        body: JSON.stringify(variables),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-      return response;
+      try {
+        const response = await authApi<LoginRes>('login', {
+          method: 'POST',
+          body: JSON.stringify(variables),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("Login API response:", response);
+        return response;
+      } catch (error) {
+        console.error("Login API error:", error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      console.log('Login successful:', data);
+    },
+    onError: (error) => {
+      console.error("Login error:", error);
     },
   });
 };
@@ -164,12 +187,15 @@ export const useLogoutMu = () => {
       method: "POST",
       useStorageToken: true,
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     }),
     onSuccess: () => {
       signOut();
       queryClient.removeQueries({ queryKey: ["token/renew"] });
+    },
+    onError: (error) => {
+      console.error("Logout error:", error);
     },
   });
 };

@@ -6,18 +6,27 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
+import { useIsAuthenticated, useSignIn } from 'react-auth-kit';
+import { handleSignin, useRenewToken } from '../api/auth/auth.api';
 
 const Header: React.FC = () => {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState<null | HTMLElement>(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const signIn = useSignIn();
+    const isAuthenticated = useIsAuthenticated();
+    const { data, isSuccess } = useRenewToken({ enabled: isAuthenticated() });
 
     useEffect(() => {
-        // Check if user is logged in when the component mounts
-        const user = localStorage.getItem('user');
-        if (user) {
-            setIsLoggedIn(true);
+        if (data && isSuccess && !isAuthenticated()) {
+            handleSignin(signIn)(data);
         }
+    }, [data, isSuccess, signIn, isAuthenticated]);
+
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState<null | HTMLElement>(null);
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
+    useEffect(() => {
+        const user = localStorage.getItem('user');
+        setIsLoggedIn(!!user);
     }, []);
 
     const isMenuOpen = Boolean(anchorEl);
@@ -49,20 +58,13 @@ const Header: React.FC = () => {
     const renderMobileMenu = (
         <Menu
             anchorEl={mobileMoreAnchorEl}
-            anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-            }}
-            id="primary-search-account-menu-mobile"
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             keepMounted
-            transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-            }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             open={isMobileMenuOpen}
             onClose={handleMobileMenuClose}
         >
-            {['Home', 'About', 'Contact Us', 'Help'].map((text) => (
+            {['Home', 'About', 'Contact', 'Help'].map((text) => (
                 <MenuItem key={text} component={RouterLink} to={`/${text.toLowerCase().replace(' ', '-')}`}>
                     {text}
                 </MenuItem>
@@ -73,16 +75,9 @@ const Header: React.FC = () => {
     const renderProfileMenu = (
         <Menu
             anchorEl={anchorEl}
-            anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-            }}
-            id="primary-search-account-menu"
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             keepMounted
-            transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-            }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             open={isMenuOpen}
             onClose={handleMenuClose}
         >
@@ -121,7 +116,7 @@ const Header: React.FC = () => {
                     </div>
                 </div>
                 <nav className="hidden md:flex space-x-4">
-                    {['Home', 'About', 'Contact Us', 'Help'].map((text) => (
+                    {['Home', 'About', 'Contact', 'Help'].map((text) => (
                         <RouterLink
                             key={text}
                             to={`/${text.toLowerCase().replace(' ', '-')}`}

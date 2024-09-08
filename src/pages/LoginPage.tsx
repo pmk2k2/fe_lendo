@@ -3,20 +3,21 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import AppleIcon from '@mui/icons-material/Apple';
 import GoogleIcon from '@mui/icons-material/Google';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, facebookProvider, appleProvider } from '../firebase';
+import {signInWithEmailAndPassword, signInWithPopup} from 'firebase/auth';
 
 const LoginPage: React.FC = () => {
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
+        setError(null);
 
-        if (!email || !validateEmail(email)) {
+        if (!validateEmail(email)) {
             setError('Invalid email');
             return;
         }
@@ -25,25 +26,49 @@ const LoginPage: React.FC = () => {
             return;
         }
 
+        setLoading(true);
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            localStorage.setItem('user', JSON.stringify(userCredential.user));
+            const result = await signInWithEmailAndPassword(auth, email, password);
+            const user = result.user;
+            localStorage.setItem('user', JSON.stringify(user));
             navigate('/home');
         } catch (error: any) {
-            setError(`Login failed: ${error.message}`);
+            setError(`Login failed: ${handleFirebaseError(error)}`);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const isLoading = false;
-
     const handleSocialLogin = async (provider: any) => {
+        setLoading(true);
         try {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
             localStorage.setItem('user', JSON.stringify(user));
             navigate('/home');
         } catch (error: any) {
-            setError(`Social login failed: ${error.message}`);
+            setError(`Social login failed: ${handleFirebaseError(error)}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFirebaseError = (error: any) => {
+        switch (error.code) {
+            case 'auth/user-not-found':
+                return 'No account found with this email.';
+            case 'auth/wrong-password':
+                return 'Incorrect password.';
+            case 'auth/too-many-requests':
+                return 'Too many login attempts. Try again later.';
+            case 'auth/invalid-email':
+                return 'The email address is invalid.';
+            case 'auth/account-exists-with-different-credential':
+                return 'An account with this email already exists with different credentials.';
+            case 'auth/popup-closed-by-user':
+                return 'The login popup was closed before completing.';
+            default:
+                return `An unknown error occurred. Error code: ${error.code}`;
         }
     };
 
@@ -62,7 +87,6 @@ const LoginPage: React.FC = () => {
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <input type="hidden" name="remember" value="true" />
                     <div className="rounded-md shadow-sm -space-y-px">
                         <div>
                             <label htmlFor="email-address" className="sr-only">Email address</label>
@@ -72,6 +96,8 @@ const LoginPage: React.FC = () => {
                                 type="email"
                                 autoComplete="email"
                                 required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
                                 placeholder="Email address"
                             />
@@ -84,6 +110,8 @@ const LoginPage: React.FC = () => {
                                 type="password"
                                 autoComplete="current-password"
                                 required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
                                 placeholder="Password"
                             />
@@ -92,36 +120,39 @@ const LoginPage: React.FC = () => {
                     <div>
                         <button
                             type="submit"
+                            disabled={loading}
                             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            disabled={isLoading}
                         >
-                            {isLoading ? 'Logging In...' : 'Log In'}
+                            {loading ? 'Logging in...' : 'Log in'}
                         </button>
                     </div>
                     <div className="mt-6 grid grid-cols-1 gap-2">
                         <button
                             type="button"
+                            disabled={loading}
                             className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
                             onClick={() => handleSocialLogin(facebookProvider)}
                         >
                             <FacebookIcon className="h-5 w-5 text-blue-600 mr-2" />
-                            Continue with Facebook
+                            {loading ? 'Loading...' : 'Continue with Facebook'}
                         </button>
                         <button
                             type="button"
+                            disabled={loading}
                             className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
                             onClick={() => handleSocialLogin(appleProvider)}
                         >
                             <AppleIcon className="h-5 w-5 text-gray-700 mr-2" />
-                            Continue with Apple
+                            {loading ? 'Loading...' : 'Continue with Apple'}
                         </button>
                         <button
                             type="button"
+                            disabled={loading}
                             className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             onClick={() => handleSocialLogin(googleProvider)}
                         >
                             <GoogleIcon className="h-5 w-5 text-red-500 mr-2" />
-                            Continue with Google
+                            {loading ? 'Loading...' : 'Continue with Google'}
                         </button>
                     </div>
                     <div className="mt-4 text-center text-sm text-gray-600">

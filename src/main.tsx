@@ -29,6 +29,10 @@ import SignUpPage from "./pages/SignUpPage.tsx";
 import About from "./pages/About.tsx";
 import Contact from "./pages/Contact.tsx";
 import Help from "./pages/Help.tsx";
+import ErrorPage from "./ErrorPage.tsx";
+import {RequireAuth} from "./components/RequireAuth.tsx";
+import ProfilePage from "./pages/ProfilePage.tsx";
+import EmailVerification from "./pages/EmailVerification.tsx";
 dayjs.extend(dayjsDurationPlugin);
 dayjs.extend(LocalizedFormat);
 
@@ -44,8 +48,6 @@ const queryClient = new QueryClient({
                 );
             }
             if (error.cause === 401) {
-                // log user out imperatively
-
                 tokenStorage.clear();
             }
         },
@@ -81,6 +83,7 @@ const router = createBrowserRouter([
     {
         element: <AuthProvider />,
         loader: renewTokenLoader(queryClient),
+        errorElement: <ErrorPage />,
         children: [
             {
                 loader: loaderCombinator(
@@ -88,6 +91,20 @@ const router = createBrowserRouter([
                 ),
                 element: <Root />,
                 children: [
+                    {
+                        element: <RequireAuth />,
+                        children: [
+                            {
+                                // loader: getAllByOwnerLoader(queryClient),
+                                path: ROUTES.ROOT.PROTECTED.PROFILE.path,
+                                element: <ProfilePage />,
+                            },
+                            // {
+                            //     path: ROUTES.ROOT.PROTECTED.PROFILE.AddProduct.path,
+                            //     element: <AddProduct />,
+                            // },
+                        ],
+                    },
                     { path: ROUTES.ROOT.HOME.path, element: <Home /> },
                     { path: ROUTES.ROOT.LANDINGPAGE.path, element: <Home /> },
                     { path: ROUTES.ROOT.ABOUT.path, element: <About /> },
@@ -96,6 +113,7 @@ const router = createBrowserRouter([
                     { path: ROUTES.loginRoot.Login.path, element: <LoginPage /> },
                     { path: ROUTES.loginRoot.SignUp.path, element: <SignUpPage />,},
                     { path: ROUTES.ROOT.SIGNUP.path, element: <SignUpPage /> },
+                    { path: ROUTES.loginRoot.EmailVerification.path, element: <EmailVerification />,},
 
                 ],
             },
