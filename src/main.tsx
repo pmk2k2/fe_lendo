@@ -33,6 +33,7 @@ import ErrorPage from "./ErrorPage.tsx";
 import {RequireAuth} from "./components/RequireAuth.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import EmailVerification from "./pages/EmailVerification.tsx";
+import Products from "./pages/Products.tsx";
 dayjs.extend(dayjsDurationPlugin);
 dayjs.extend(LocalizedFormat);
 
@@ -114,6 +115,7 @@ const router = createBrowserRouter([
                     { path: ROUTES.loginRoot.SignUp.path, element: <SignUpPage />,},
                     { path: ROUTES.ROOT.SIGNUP.path, element: <SignUpPage /> },
                     { path: ROUTES.loginRoot.EmailVerification.path, element: <EmailVerification />,},
+                    { path: ROUTES.ROOT.PRODUCTS.path, element: <Products /> },
 
                 ],
             },

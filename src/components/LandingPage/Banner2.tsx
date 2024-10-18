@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Banner = () => {
+const Banner2 = () => {
     return (
         <div className="relative bg-cover bg-center h-96 mx-0" style={{ backgroundImage: "url('src/assets/onur-binay-_RpPMkqTTTg-unsplash.jpg')" }}>
             <div className="absolute inset-0 bg-black opacity-30"></div>
@@ -15,4 +15,4 @@ const Banner = () => {
     );
 };
 
-export default Banner;
+export default Banner2;

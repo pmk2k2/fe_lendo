@@ -8,11 +8,11 @@ export const RequireAuth = () => {
 
   if (!isAuthed()) {
     return (
-      <Navigate
-        to={ROUTES.loginRoot.Login.path}
-        replace
-        state={{ from: location.pathname }}
-      />
+        <Navigate
+            to={ROUTES.loginRoot.Login.path}
+            replace
+            state={{ from: location.pathname }}
+        />
     );
   } else return <Outlet />;
 };

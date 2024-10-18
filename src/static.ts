@@ -31,6 +31,9 @@ export const ROUTES = {
     PRODUCTS: route("products/:id", {
       params: { id: string().defined() },
     }),
+    PRODUCTS_BY_BRAND: route("products/brand/:brandName", {
+      params: { brandName: string().defined() },
+    }),
     PROTECTED: route("protected", undefined, {
       PROFILE: route("profile", undefined, {
         AddProduct: route("add-product"),

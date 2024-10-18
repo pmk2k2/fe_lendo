@@ -1,43 +1,46 @@
 import React from 'react';
-import { Grid, Card, CardContent, CardMedia, Typography, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { fetchProductsByBrand, fetchProductsByCategory } from '../api/products/products.api.ts';
+import {Product} from "../api/products/products.types.ts";
 
-const Products: React.FC = () => {
-  const navigate = useNavigate();
 
-  const productList = [
-    { id: 1, name: 'Laptop', image: '/images/laptop.jpg', description: 'High-performance laptop' },
-    { id: 2, name: 'Camera', image: '/images/camera.jpg', description: 'DSLR camera' },
-    { id: 3, name: 'Smartphone', image: '/images/smartphone.jpg', description: 'Latest smartphone' },
-  ];
+const ProductsPage: React.FC = () => {
+    const { brandName, categoryName } = useParams<{ brandName?: string; categoryName?: string }>();
 
-  return (
-    <Grid container spacing={3} sx={{ mt: 4 }}>
-      {productList.map((product) => (
-        <Grid item xs={12} sm={6} md={4} key={product.id}>
-          <Card>
-            <CardMedia
-              component="img"
-              height="140"
-              image={product.image}
-              alt={product.name}
-            />
-            <CardContent>
-              <Typography variant="h5" component="div">
-                {product.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {product.description}
-              </Typography>
-              <Button size="small" onClick={() => navigate(`/products/${product.id}`)}>
-                Learn More
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-      ))}
-    </Grid>
-  );
+    // Determine the query function based on the URL parameters
+    const fetchProducts = () => {
+        if (brandName) {
+            return fetchProductsByBrand(brandName);
+        } else if (categoryName) {
+            return fetchProductsByCategory(categoryName);
+        } else {
+            return fetchProducts(); // Fetch all products if no filters are applied
+        }
+    };
+
+    const { data: products, error, isLoading } = useQuery<Product[]>({
+        queryKey: ['products', brandName || categoryName], // Key based on brand or category
+        queryFn: fetchProducts,
+    });
+
+    // Handle loading and error states
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div>Error loading products: {(error as Error).message}</div>;
+
+    // Render the products
+    return (
+        <div>
+            <h1>{brandName ? `Products by ${brandName}` : categoryName ? `Products in ${categoryName}` : 'All Products'}</h1>
+            <ul>
+                {products?.map((product) => (
+                    <li key={product.id}>
+                        {product.name} - ${product.price}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
 };
 
-export default Products;
+export default ProductsPage;
